@@ -239,7 +239,7 @@
 
   <script>
       document.addEventListener('DOMContentLoaded', () => {
-          // 宣告全域變數，記錄目前拖拉中的數字（適用於桌面及觸控）
+          // 全域變數，記錄拖拉中的數字（桌面及觸控共用）
           let draggedElement = null;
           
           const numberContainer = document.getElementById('numberContainer');
@@ -401,7 +401,7 @@
                   checkMark.innerHTML = '✓';
                   numberBox.appendChild(checkMark);
                   
-                  // 監聽拖拉事件：無論數字在上方或插槽中，都可拖拉
+                  // 拖拉事件（桌面）
                   numberBox.addEventListener('dragstart', (e) => {
                       if (!numberBox.classList.contains('correct')) {
                           draggedElement = numberBox;
@@ -420,6 +420,7 @@
                       draggedElement = null;
                   });
                   
+                  // 觸控事件
                   numberBox.addEventListener('touchstart', (e) => {
                       if (!numberBox.classList.contains('correct')) {
                           draggedElement = numberBox;
@@ -461,7 +462,7 @@
                   slot.addEventListener('drop', (e) => {
                       e.preventDefault();
                       slot.style.backgroundColor = '';
-                      // 若已有數字，則先將原有數字移回上方，並移除正確/錯誤樣式
+                      // 若已有數字，先將原有數字移回上方，並移除正確/錯誤樣式
                       const existingBox = slot.querySelector('.number-box');
                       if (existingBox) {
                           existingBox.classList.remove('incorrect');
@@ -477,11 +478,13 @@
                               slot.appendChild(originalBox);
                               const position = parseInt(slot.dataset.position);
                               if (value === position + 1) {
+                                  originalBox.classList.remove('incorrect');
                                   originalBox.classList.add('correct');
                                   setTimeout(() => {
                                       playSuccessSound();
                                   }, 200);
                               } else {
+                                  originalBox.classList.remove('correct');
                                   originalBox.classList.add('incorrect');
                                   playErrorSound();
                                   setTimeout(() => {
@@ -515,7 +518,7 @@
               setupTouchDragSupport();
           }
   
-          // 設置觸控拖拽支援（桌面以外的拖拉）
+          // 設置觸控拖拽支援（適用於觸控裝置）
           function setupTouchDragSupport() {
               document.addEventListener('touchmove', (e) => {
                   if (!draggedElement) return;
@@ -555,11 +558,13 @@
                           draggedElement.style.top = '';
                           const position = parseInt(slot.dataset.position);
                           if (value === position + 1) {
+                              draggedElement.classList.remove('incorrect');
                               draggedElement.classList.add('correct');
                               setTimeout(() => {
                                   playSuccessSound();
                               }, 200);
                           } else {
+                              draggedElement.classList.remove('correct');
                               draggedElement.classList.add('incorrect');
                               playErrorSound();
                               setTimeout(() => {
@@ -586,7 +591,7 @@
               }, { passive: false });
           }
           
-          // 檢查排序（送出答案時檢查）
+          // 檢查排序（送出答案時）
           function checkCurrentOrder() {
               const slots = answerContainer.querySelectorAll('.slot');
               let allCorrect = true;
