@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>1到10數字排序遊戲</title>
+  <style>
+      body {
+          font-family: 'Arial', sans-serif;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          background-color: #f0f8ff;
+          margin: 0;
+          padding: 20px;
+          box-sizing: border-box;
+      }
+      
+      h1 {
+          color: #2c3e50;
+          margin-bottom: 30px;
+          text-align: center;
+      }
+      
+      .game-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
+          max-width: 800px;
+      }
+      
+      .number-container {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 20px;
+          width: 100%;
+          background-color: #ecf0f1;
+          padding: 15px;
+          border-radius: 8px;
+      }
+      
+      .number-box {
+          position: relative;
+          width: 60px;
+          height: 60px;
+          background-color: #3498db;
+          color: white;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-size: 24px;
+          font-weight: bold;
+          border-radius: 8px;
+          cursor: grab;
+          transition: transform 0.2s, background-color 0.3s;
+          user-select: none;
+          touch-action: none;
+      }
+      
+      .number-box:active {
+          cursor: grabbing;
+      }
+      
+      .number-box.correct {
+          background-color: #2ecc71;
+          cursor: default;
+      }
+      
+      .number-box.incorrect {
+          background-color: #e74c3c;
+      }
+      
+      .check-mark {
+          position: absolute;
+          top: -20px;
+          left: 50%;
+          transform: translateX(-50%);
+          color: #2ecc71;
+          font-size: 20px;
+          visibility: hidden;
+      }
+      
+      .number-box.correct .check-mark {
+          visibility: visible;
+      }
+      
+      .controls {
+          margin-top: 20px;
+          display: flex;
+          gap: 10px;
+      }
+      
+      button {
+          padding: 10px 20px;
+          background-color: #2c3e50;
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 16px;
+          transition: background-color 0.3s;
+      }
+      
+      button:hover {
+          background-color: #34495e;
+      }
+      
+      .message {
+          margin-top: 20px;
+          font-size: 20px;
+          font-weight: bold;
+          color: #2c3e50;
+          height: 30px;
+      }
+      
+      .answer-container {
+          display: flex;
+          flex-wrap: nowrap;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 30px;
+          width: 100%;
+          min-height: 80px;
+          background-color: rgba(255, 255, 255, 0.6);
+          border-radius: 8px;
+          padding: 15px;
+          overflow-x: visible;
+      }
+      
+      .slot {
+          width: 60px;
+          height: 60px;
+          min-width: 60px;
+          min-height: 60px;
+          border: 2px dashed #95a5a6;
+          border-radius: 8px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin: 0 5px;
+          flex-shrink: 0;
+          position: relative;
+      }
+      
+      /* 煙火效果 */
+      .fireworks-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 1000;
+          display: none;
+      }
+      
+      .firework {
+          position: absolute;
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          animation: explode 1s ease-out forwards;
+      }
+      
+      @keyframes explode {
+          0% {
+              transform: translate(0, 0);
+              opacity: 1;
+          }
+          100% {
+              transform: translate(var(--dx), var(--dy));
+              opacity: 0;
+          }
+      }
+      
+      /* 針對不同屏幕尺寸進行優化 */
+      @media (max-width: 800px) {
+          .game-container {
+              max-width: 100%;
+          }
+          
+          .answer-container {
+              padding: 15px 5px;
+              flex-wrap: wrap;
+              justify-content: center;
+          }
+      }
+      
+      @media (max-width: 600px) {
+          .slot {
+              width: 50px;
+              height: 50px;
+              min-width: 50px;
+              min-height: 50px;
+              margin: 0 3px;
+          }
+          
+          .number-box {
+              width: 50px;
+              height: 50px;
+              font-size: 20px;
+          }
+      }
+      
+      @media (max-width: 400px) {
+          .slot {
+              width: 40px;
+              height: 40px;
+              min-width: 40px;
+              min-height: 40px;
+              margin: 0 2px;
+          }
+          
+          .number-box {
+              width: 40px;
+              height: 40px;
+              font-size: 18px;
+          }
+      }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+      <h1>1到10數字排序遊戲</h1>
+      <div class="number-container" id="numberContainer"></div>
+      <div class="answer-container" id="answerContainer"></div>
+      <div class="message" id="message"></div>
+      <div class="controls">
+          <button id="resetBtn">重新開始</button>
+          <button id="checkBtn">送出答案</button>
+      </div>
+  </div>
+  <div class="fireworks-container" id="fireworksContainer"></div>
+
+  <script>
+      document.addEventListener('DOMContentLoaded', () => {
+          // 宣告全域變數，記錄目前拖拉中的數字（適用於桌面及觸控）
+          let draggedElement = null;
+          
+          const numberContainer = document.getElementById('numberContainer');
+          const answerContainer = document.getElementById('answerContainer');
+          const message = document.getElementById('message');
+          const resetBtn = document.getElementById('resetBtn');
+          const checkBtn = document.getElementById('checkBtn');
+          const fireworksContainer = document.getElementById('fireworksContainer');
+          
+          // 數字的中文發音
+          const numberSounds = {
+              1: "一",
+              2: "二",
+              3: "三",
+              4: "四",
+              5: "五",
+              6: "六",
+              7: "七",
+              8: "八",
+              9: "九",
+              10: "十"
+          };
+          
+          // 語音合成
+          const speakText = (text, lang = 'zh-TW') => {
+              if ('speechSynthesis' in window) {
+                  const utterance = new SpeechSynthesisUtterance(text);
+                  utterance.lang = lang;
+                  speechSynthesis.speak(utterance);
+              }
+          };
+          
+          // 播放成功聲音
+          function playSuccessSound() {
+              const context = new (window.AudioContext || window.webkitAudioContext)();
+              const oscillator = context.createOscillator();
+              const gainNode = context.createGain();
+              
+              oscillator.type = 'sine';
+              oscillator.frequency.value = 800;
+              
+              gainNode.gain.value = 0.3;
+              oscillator.connect(gainNode);
+              gainNode.connect(context.destination);
+              
+              oscillator.start();
+              
+              setTimeout(() => {
+                  oscillator.frequency.value = 1000;
+              }, 100);
+              
+              setTimeout(() => {
+                  oscillator.frequency.value = 1200;
+              }, 200);
+              
+              gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.5);
+              oscillator.stop(context.currentTime + 0.5);
+          }
+          
+          // 播放錯誤聲音
+          function playErrorSound() {
+              const context = new (window.AudioContext || window.webkitAudioContext)();
+              const oscillator = context.createOscillator();
+              const gainNode = context.createGain();
+              
+              oscillator.type = 'sine';
+              oscillator.frequency.value = 400;
+              
+              gainNode.gain.value = 0.3;
+              oscillator.connect(gainNode);
+              gainNode.connect(context.destination);
+              
+              oscillator.start();
+              
+              setTimeout(() => {
+                  oscillator.frequency.value = 300;
+              }, 100);
+              
+              gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.4);
+              oscillator.stop(context.currentTime + 0.4);
+          }
+          
+          // 播放煙火音效
+          function playFireworkSound() {
+              const context = new (window.AudioContext || window.webkitAudioContext)();
+              for (let i = 0; i < 3; i++) {
+                  setTimeout(() => {
+                      const oscillator = context.createOscillator();
+                      const gainNode = context.createGain();
+                      oscillator.type = 'sine';
+                      oscillator.frequency.value = 500 + Math.random() * 500;
+                      gainNode.gain.value = 0.2;
+                      oscillator.connect(gainNode);
+                      gainNode.connect(context.destination);
+                      oscillator.start();
+                      gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.5);
+                      oscillator.stop(context.currentTime + 0.5);
+                  }, i * 200);
+              }
+          }
+          
+          // 創建煙火效果（僅在送出答案後觸發）
+          function createFireworks() {
+              fireworksContainer.style.display = 'block';
+              fireworksContainer.innerHTML = '';
+              for (let i = 0; i < 5; i++) {
+                  setTimeout(() => {
+                      const x = Math.random() * window.innerWidth;
+                      const y = Math.random() * window.innerHeight * 0.5;
+                      createFirework(x, y);
+                      playFireworkSound();
+                  }, i * 300);
+              }
+              setTimeout(() => {
+                  fireworksContainer.style.display = 'none';
+                  message.textContent = "太棒了，恭喜你答對了。";
+                  message.style.color = '#2ecc71';
+                  speakText("太棒了，恭喜你答對了");
+              }, 2500);
+          }
+          
+          // 單個煙火粒子
+          function createFirework(x, y) {
+              const colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff'];
+              for (let i = 0; i < 30; i++) {
+                  const particle = document.createElement('div');
+                  particle.className = 'firework';
+                  particle.style.left = `${x}px`;
+                  particle.style.top = `${y}px`;
+                  particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                  const angle = Math.random() * Math.PI * 2;
+                  const distance = 50 + Math.random() * 100;
+                  const dx = Math.cos(angle) * distance;
+                  const dy = Math.sin(angle) * distance;
+                  particle.style.setProperty('--dx', `${dx}px`);
+                  particle.style.setProperty('--dy', `${dy}px`);
+                  fireworksContainer.appendChild(particle);
+              }
+          }
+          
+          // 初始化遊戲
+          function initGame() {
+              numberContainer.innerHTML = '';
+              answerContainer.innerHTML = '';
+              message.textContent = '';
+              
+              const numbers = Array.from({length: 10}, (_, i) => i + 1);
+              shuffleArray(numbers);
+              
+              numbers.forEach(num => {
+                  const numberBox = document.createElement('div');
+                  numberBox.className = 'number-box';
+                  numberBox.textContent = num;
+                  numberBox.dataset.value = num;
+                  numberBox.draggable = true;
+                  
+                  const checkMark = document.createElement('div');
+                  checkMark.className = 'check-mark';
+                  checkMark.innerHTML = '✓';
+                  numberBox.appendChild(checkMark);
+                  
+                  // 監聽拖拉事件：無論數字在上方或插槽中，都可拖拉
+                  numberBox.addEventListener('dragstart', (e) => {
+                      if (!numberBox.classList.contains('correct')) {
+                          draggedElement = numberBox;
+                          e.dataTransfer.setData('text/plain', num);
+                          setTimeout(() => {
+                              numberBox.style.opacity = '0.5';
+                          }, 0);
+                          speakText(numberSounds[num]);
+                      } else {
+                          e.preventDefault();
+                      }
+                  });
+                  
+                  numberBox.addEventListener('dragend', () => {
+                      numberBox.style.opacity = '1';
+                      draggedElement = null;
+                  });
+                  
+                  numberBox.addEventListener('touchstart', (e) => {
+                      if (!numberBox.classList.contains('correct')) {
+                          draggedElement = numberBox;
+                          speakText(numberSounds[num]);
+                          setTimeout(() => {
+                              numberBox.style.opacity = '0.7';
+                          }, 0);
+                      }
+                  }, { passive: false });
+                  
+                  numberBox.addEventListener('click', () => {
+                      if (!numberBox.classList.contains('correct')) {
+                          speakText(numberSounds[num]);
+                      }
+                  });
+                  
+                  numberContainer.appendChild(numberBox);
+              });
+              
+              // 建立下方的插槽（不加入右下角提示）
+              for (let i = 0; i < 10; i++) {
+                  const slot = document.createElement('div');
+                  slot.className = 'slot';
+                  slot.dataset.position = i;
+                  
+                  slot.addEventListener('dragover', (e) => {
+                      e.preventDefault();
+                  });
+                  
+                  slot.addEventListener('dragenter', (e) => {
+                      e.preventDefault();
+                      slot.style.backgroundColor = 'rgba(52, 152, 219, 0.2)';
+                  });
+                  
+                  slot.addEventListener('dragleave', () => {
+                      slot.style.backgroundColor = '';
+                  });
+                  
+                  slot.addEventListener('drop', (e) => {
+                      e.preventDefault();
+                      slot.style.backgroundColor = '';
+                      // 若已有數字，則先將原有數字移回上方，並移除正確/錯誤樣式
+                      const existingBox = slot.querySelector('.number-box');
+                      if (existingBox) {
+                          existingBox.classList.remove('incorrect');
+                          existingBox.classList.remove('correct');
+                          numberContainer.appendChild(existingBox);
+                      }
+  
+                      const num = e.dataTransfer.getData('text/plain');
+                      const value = parseInt(num);
+                      if (!isNaN(value)) {
+                          const originalBox = document.querySelector(`.number-box[data-value="${value}"]:not(.correct)`);
+                          if (originalBox) {
+                              slot.appendChild(originalBox);
+                              const position = parseInt(slot.dataset.position);
+                              if (value === position + 1) {
+                                  originalBox.classList.add('correct');
+                                  setTimeout(() => {
+                                      playSuccessSound();
+                                  }, 200);
+                              } else {
+                                  originalBox.classList.add('incorrect');
+                                  playErrorSound();
+                                  setTimeout(() => {
+                                      playErrorSound();
+                                  }, 300);
+                              }
+                          }
+                      }
+                  });
+                  
+                  answerContainer.appendChild(slot);
+              }
+  
+              // 讓上方數字區也可作為拖放目標（可直接將下方插槽中的數字拖回上方）
+              numberContainer.addEventListener('dragover', (e) => {
+                  e.preventDefault();
+              });
+              numberContainer.addEventListener('drop', (e) => {
+                  e.preventDefault();
+                  if (draggedElement) {
+                      draggedElement.classList.remove('incorrect');
+                      draggedElement.classList.remove('correct');
+                      numberContainer.appendChild(draggedElement);
+                      draggedElement.style.position = '';
+                      draggedElement.style.zIndex = '';
+                      draggedElement.style.left = '';
+                      draggedElement.style.top = '';
+                  }
+              });
+  
+              setupTouchDragSupport();
+          }
+  
+          // 設置觸控拖拽支援（桌面以外的拖拉）
+          function setupTouchDragSupport() {
+              document.addEventListener('touchmove', (e) => {
+                  if (!draggedElement) return;
+                  const touch = e.touches[0];
+                  const newPosX = touch.clientX;
+                  const newPosY = touch.clientY;
+                  e.preventDefault();
+                  draggedElement.style.position = 'fixed';
+                  draggedElement.style.zIndex = 1000;
+                  draggedElement.style.left = `${newPosX - draggedElement.offsetWidth / 2}px`;
+                  draggedElement.style.top = `${newPosY - draggedElement.offsetHeight / 2}px`;
+              }, { passive: false });
+  
+              document.addEventListener('touchend', (e) => {
+                  if (!draggedElement) return;
+                  draggedElement.style.opacity = '1';
+                  const slots = document.querySelectorAll('.slot');
+                  let dropped = false;
+                  const lastTouch = e.changedTouches[0];
+                  const x = lastTouch.clientX;
+                  const y = lastTouch.clientY;
+                  slots.forEach((slot) => {
+                      const rect = slot.getBoundingClientRect();
+                      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                          const value = parseInt(draggedElement.dataset.value);
+                          // 若槽已有數字則先移除，並恢復原藍色樣式
+                          const existing = slot.querySelector('.number-box');
+                          if (existing) {
+                              existing.classList.remove('incorrect');
+                              existing.classList.remove('correct');
+                              numberContainer.appendChild(existing);
+                          }
+                          slot.appendChild(draggedElement);
+                          draggedElement.style.position = '';
+                          draggedElement.style.zIndex = '';
+                          draggedElement.style.left = '';
+                          draggedElement.style.top = '';
+                          const position = parseInt(slot.dataset.position);
+                          if (value === position + 1) {
+                              draggedElement.classList.add('correct');
+                              setTimeout(() => {
+                                  playSuccessSound();
+                              }, 200);
+                          } else {
+                              draggedElement.classList.add('incorrect');
+                              playErrorSound();
+                              setTimeout(() => {
+                                  playErrorSound();
+                              }, 300);
+                          }
+                          dropped = true;
+                      }
+                  });
+                  if (!dropped) {
+                      draggedElement.style.position = '';
+                      draggedElement.style.zIndex = '';
+                      draggedElement.style.left = '';
+                      draggedElement.style.top = '';
+                      const parent = draggedElement.parentNode;
+                      if (parent.classList.contains('slot')) {
+                          parent.removeChild(draggedElement);
+                          numberContainer.appendChild(draggedElement);
+                          draggedElement.classList.remove('incorrect');
+                          draggedElement.classList.remove('correct');
+                      }
+                  }
+                  draggedElement = null;
+              }, { passive: false });
+          }
+          
+          // 檢查排序（送出答案時檢查）
+          function checkCurrentOrder() {
+              const slots = answerContainer.querySelectorAll('.slot');
+              let allCorrect = true;
+              let allFilled = true;
+              slots.forEach((slot, index) => {
+                  const box = slot.querySelector('.number-box');
+                  if (box) {
+                      const value = parseInt(box.dataset.value);
+                      const expectedValue = index + 1;
+                      if (value !== expectedValue) {
+                          allCorrect = false;
+                      }
+                  } else {
+                      allCorrect = false;
+                      allFilled = false;
+                  }
+              });
+              if (!allFilled) {
+                  message.textContent = '請先將所有數字放入格子中！';
+                  message.style.color = '#e74c3c';
+                  setTimeout(() => {
+                      message.textContent = '';
+                  }, 2000);
+                  return;
+              }
+              if (allCorrect) {
+                  message.textContent = '';
+                  createFireworks();
+              } else {
+                  // 顯示大叉叉：字型200px，置中全畫面
+                  const bigCross = document.createElement('div');
+                  bigCross.className = 'big-cross';
+                  bigCross.textContent = '✗';
+                  bigCross.style.position = 'fixed';
+                  bigCross.style.top = '50%';
+                  bigCross.style.left = '50%';
+                  bigCross.style.transform = 'translate(-50%, -50%)';
+                  bigCross.style.fontSize = '200px';
+                  bigCross.style.color = '#e74c3c';
+                  bigCross.style.zIndex = '1001';
+                  document.body.appendChild(bigCross);
+  
+                  playErrorSound();
+  
+                  setTimeout(() => {
+                      document.body.removeChild(bigCross);
+                  }, 1500);
+  
+                  // 修改提示詞與語音內容
+                  message.textContent = '對不起，你答錯了';
+                  message.style.color = '#e74c3c';
+                  speakText('對不起，你答錯了');
+              }
+          }
+          
+          // Fisher-Yates 洗牌演算法
+          function shuffleArray(array) {
+              for (let i = array.length - 1; i > 0; i--) {
+                  const j = Math.floor(Math.random() * (i + 1));
+                  [array[i], array[j]] = [array[j], array[i]];
+              }
+              return array;
+          }
+          
+          // 調整答案槽尺寸
+          function adjustContainers() {
+              const containerWidth = answerContainer.offsetWidth;
+              const slotCount = 10;
+              let slotSize = Math.max(30, Math.min(60, (containerWidth - 100) / slotCount));
+              document.querySelectorAll('.slot').forEach(slot => {
+                  slot.style.width = `${slotSize}px`;
+                  slot.style.height = `${slotSize}px`;
+                  slot.style.minWidth = `${slotSize}px`;
+                  slot.style.minHeight = `${slotSize}px`;
+              });
+              const rows = Math.ceil(slotCount / Math.floor(containerWidth / (slotSize + 10)));
+              const containerHeight = (slotSize + 20) * rows;
+              answerContainer.style.minHeight = `${containerHeight}px`;
+          }
+          
+          window.addEventListener('resize', adjustContainers);
+  
+          resetBtn.addEventListener('click', () => {
+              initGame();
+              setTimeout(adjustContainers, 100);
+          });
+          
+          checkBtn.addEventListener('click', checkCurrentOrder);
+          
+          initGame();
+          setTimeout(adjustContainers, 100);
+      });
+  </script>
+</body>
+</html>
