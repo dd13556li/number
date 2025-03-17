@@ -450,6 +450,7 @@
               slot.className = 'slot';
               slot.dataset.position = i;
   
+              // 桌面拖放事件：先檢查若插槽已有正確答案則不允許替換
               slot.addEventListener('dragover', (e) => { e.preventDefault(); });
               slot.addEventListener('dragenter', (e) => {
                   e.preventDefault();
@@ -459,7 +460,11 @@
               slot.addEventListener('drop', (e) => {
                   e.preventDefault();
                   slot.style.backgroundColor = '';
-                  // 若已有數字，先將原有數字移回上方
+                  // 如果此插槽已有正確的數字，則不允許更換
+                  if (slot.querySelector('.number-box.correct')) {
+                      return;
+                  }
+                  // 若已有數字但不正確，先將原有數字移回上方
                   const existingBox = slot.querySelector('.number-box');
                   if (existingBox) {
                       existingBox.classList.remove('incorrect');
@@ -533,6 +538,10 @@
               slots.forEach((slot) => {
                   const rect = slot.getBoundingClientRect();
                   if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                      // 如果此插槽已有正確的數字，則跳過該插槽，不進行替換
+                      if (slot.querySelector('.number-box.correct')) {
+                          return;
+                      }
                       const num = draggedElement.dataset.value;
                       const existing = slot.querySelector('.number-box');
                       if (existing) {
@@ -642,7 +651,6 @@
       startGameBtn.addEventListener('click', () => {
           const inputs = document.querySelectorAll('.number-input');
           const values = [];
-          let valid = true;
           inputs.forEach(input => {
               const val = input.value.trim();
               if (val !== "") {  // 只將非空白的值加入
