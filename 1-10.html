@@ -17,24 +17,24 @@
           padding: 20px;
           box-sizing: border-box;
       }
-      
+
       h1 {
           color: #2c3e50;
           margin-bottom: 20px;
           text-align: center;
       }
-      
+
       .container {
           width: 100%;
           max-width: 800px;
           text-align: center;
       }
-      
+
       /* 輸入數字區 */
       #inputContainer {
           margin-bottom: 30px;
       }
-      
+
       .number-input {
           width: 50px;
           padding: 5px;
@@ -42,7 +42,7 @@
           text-align: center;
           margin: 5px;
       }
-      
+
       button {
           padding: 10px 20px;
           background-color: #2c3e50;
@@ -54,11 +54,11 @@
           transition: background-color 0.3s;
           margin: 5px;
       }
-      
+
       button:hover {
           background-color: #34495e;
       }
-      
+
       /* 遊戲區 */
       #gameContainer {
           display: none;
@@ -66,7 +66,7 @@
           align-items: center;
           width: 100%;
       }
-      
+
       .number-container {
           display: flex;
           flex-wrap: wrap;
@@ -78,7 +78,7 @@
           padding: 15px;
           border-radius: 8px;
       }
-      
+
       .number-box {
           position: relative;
           width: 60px;
@@ -96,20 +96,20 @@
           user-select: none;
           touch-action: none;
       }
-      
+
       .number-box:active {
           cursor: grabbing;
       }
-      
+
       .number-box.correct {
           background-color: #2ecc71;
           cursor: default;
       }
-      
+
       .number-box.incorrect {
           background-color: #e74c3c;
       }
-      
+
       .check-mark {
           position: absolute;
           top: -20px;
@@ -119,11 +119,11 @@
           font-size: 20px;
           visibility: hidden;
       }
-      
+
       .number-box.correct .check-mark {
           visibility: visible;
       }
-      
+
       .answer-container {
           display: flex;
           flex-wrap: nowrap;
@@ -137,7 +137,7 @@
           padding: 15px;
           overflow-x: visible;
       }
-      
+
       .slot {
           width: 60px;
           height: 60px;
@@ -152,7 +152,7 @@
           flex-shrink: 0;
           position: relative;
       }
-      
+
       .message {
           margin-top: 20px;
           font-size: 20px;
@@ -160,7 +160,7 @@
           color: #2c3e50;
           height: 30px;
       }
-      
+
       /* 煙火效果 */
       .fireworks-container {
           position: fixed;
@@ -172,7 +172,7 @@
           z-index: 1000;
           display: none;
       }
-      
+
       .firework {
           position: absolute;
           width: 5px;
@@ -180,7 +180,7 @@
           border-radius: 50%;
           animation: explode 1s ease-out forwards;
       }
-      
+
       @keyframes explode {
           0% {
               transform: translate(0, 0);
@@ -191,19 +191,19 @@
               opacity: 0;
           }
       }
-      
+
       @media (max-width: 800px) {
           .number-container {
               max-width: 100%;
           }
-          
+
           .answer-container {
               padding: 15px 5px;
               flex-wrap: wrap;
               justify-content: center;
           }
       }
-      
+
       @media (max-width: 600px) {
           .slot {
               width: 50px;
@@ -212,14 +212,14 @@
               min-height: 50px;
               margin: 0 3px;
           }
-          
+
           .number-box {
               width: 50px;
               height: 50px;
               font-size: 20px;
           }
       }
-      
+
       @media (max-width: 400px) {
           .slot {
               width: 40px;
@@ -228,7 +228,7 @@
               min-height: 40px;
               margin: 0 2px;
           }
-          
+
           .number-box {
               width: 40px;
               height: 40px;
@@ -238,16 +238,13 @@
   </style>
 </head>
 <body>
-  <!-- 輸入介面 -->
   <div class="container" id="inputContainer">
       <h1>請輸入數字（可輸入 1~10 個）</h1>
       <div id="customInputs">
-          <!-- 動態產生10個輸入框 -->
-      </div>
+          </div>
       <button id="startGameBtn">開始遊戲</button>
   </div>
 
-  <!-- 遊戲介面 -->
   <div class="container" id="gameContainer">
       <h1>自訂數字排序遊戲</h1>
       <div class="number-container" id="numberContainer"></div>
@@ -259,46 +256,62 @@
           <button id="checkBtn">送出答案</button>
       </div>
   </div>
-  
+
   <div class="fireworks-container" id="fireworksContainer"></div>
 
   <script>
-      // 語音部分：使用 Google 的 zh-TW 語音（若有符合）
+      // --- 語音功能區 ---
+      // 異步加載語音列表
       function loadVoices(callback) {
           let voices = speechSynthesis.getVoices();
           if (voices.length !== 0) {
               callback(voices);
           } else {
+              // 如果語音尚未加載，設置監聽器
               speechSynthesis.onvoiceschanged = () => {
                   voices = speechSynthesis.getVoices();
                   callback(voices);
               };
           }
       }
-      
+
+      // 選擇偏好的語音 (Google zh-TW > 其他 zh-TW > 瀏覽器預設)
       function getPreferredVoice(voices) {
-          // 嘗試找出語言為 zh-TW 且名稱中包含 "Google" 的語音
+          // 優先嘗試 Google 的 zh-TW 語音
           let voice = voices.find(v => v.lang === 'zh-TW' && v.name.includes('Google'));
           if (!voice) {
+              // 若無 Google 語音，則嘗試任何 zh-TW 語音
               voice = voices.find(v => v.lang === 'zh-TW');
           }
-          return voice;
+          // 如果連 zh-TW 都沒有，返回 null，讓瀏覽器使用預設語音
+          return voice || null;
       }
-      
+
+      // 播放數字語音（會打斷之前的語音）
       function speakText(text, lang = 'zh-TW') {
           loadVoices((voices) => {
               const preferredVoice = getPreferredVoice(voices);
               const utterance = new SpeechSynthesisUtterance(text);
+
               if (preferredVoice) {
-                  utterance.voice = preferredVoice;
+                  utterance.voice = preferredVoice; // 設置找到的語音
+                  utterance.lang = preferredVoice.lang; // 確保語言設定正確
+              } else {
+                  utterance.lang = lang; // 若無特定語音，至少設定語言
               }
-              utterance.rate = 1;
-              utterance.pitch = 1;
+
+              utterance.rate = 1;  // 語速
+              utterance.pitch = 1; // 音高
+
+              // *** 核心修改：播放前取消先前的語音 ***
+              speechSynthesis.cancel();
+
+              // 播放新的語音
               speechSynthesis.speak(utterance);
           });
       }
-      
-      // 取得 DOM 元素
+
+      // --- DOM 元素獲取 ---
       const inputContainer = document.getElementById('inputContainer');
       const customInputsDiv = document.getElementById('customInputs');
       const startGameBtn = document.getElementById('startGameBtn');
@@ -310,76 +323,89 @@
       const reinputBtn = document.getElementById('reinputBtn');
       const checkBtn = document.getElementById('checkBtn');
       const fireworksContainer = document.getElementById('fireworksContainer');
-      
+
       let customNumbers = [];  // 使用者輸入的數字順序（作為正確答案）
       let draggedElement = null; // 拖拉中的元素
-      
-      // 建立 10 個輸入框（使用者可只填部分）
+
+      // --- 初始化輸入框 ---
       for (let i = 0; i < 10; i++) {
           const input = document.createElement('input');
-          input.type = 'text';
+          input.type = 'text'; // 改為 text 以允許任何字符，稍後驗證
           input.className = 'number-input';
           input.placeholder = `數字${i+1}`;
+          // 限制只能輸入數字（可選）
+          input.addEventListener('input', function() {
+              this.value = this.value.replace(/[^0-9]/g, '');
+          });
           customInputsDiv.appendChild(input);
       }
-      
-      // 自訂音效播放函式
-      function playCorrectSound() {
-          const audio = new Audio("correct.mp3");
-          audio.play();
+
+      // --- 音效播放 ---
+      function playSound(soundFile) {
+          try {
+              const audio = new Audio(soundFile);
+              audio.play();
+          } catch (e) {
+              console.error("無法播放音效:", soundFile, e);
+          }
       }
-      
-      function playErrorSound() {
-          const audio = new Audio("error.mp3");
-          audio.play();
-      }
-      
-      function playSuccessSound() {
-          const audio = new Audio("success.mp3");
-          audio.play();
-      }
-      
-      // 以下為遊戲相關函式
-      
-      // 建立煙火效果（提示作答正確時，同時播放 success.mp3）
+      function playCorrectSound() { playSound("correct.mp3"); }
+      function playErrorSound() { playSound("error.mp3"); }
+      function playSuccessSound() { playSound("success.mp3"); }
+
+
+      // --- 煙火效果 ---
       function createFireworks() {
           fireworksContainer.style.display = 'block';
           fireworksContainer.innerHTML = '';
-          // 同步播放全題正確提示音
-          playSuccessSound();
-          for (let i = 0; i < 5; i++) {
+          playSuccessSound(); // 同步播放全題正確提示音
+          for (let i = 0; i < 5; i++) { // 產生 5 波煙火
               setTimeout(() => {
                   const x = Math.random() * window.innerWidth;
-                  const y = Math.random() * window.innerHeight * 0.5;
+                  const y = Math.random() * window.innerHeight * 0.5; // 在上半部產生
                   createFirework(x, y);
-              }, i * 300);
+              }, i * 300); // 每隔 300ms 產生一波
           }
+          // 煙火動畫結束後隱藏容器並顯示文字訊息
           setTimeout(() => {
               fireworksContainer.style.display = 'none';
               message.textContent = "太棒了，恭喜你答對了。";
               message.style.color = '#2ecc71';
-              speakText("太棒了，恭喜你答對了");
-          }, 2500);
+              // 注意：這裡不使用 speakAndWait，避免打斷可能正在播放的數字音
+              // 若需要讀出成功訊息，可以考慮在 createFireworks 結束後延遲一段時間再呼叫 speakText
+              // speakText("太棒了，恭喜你答對了");
+          }, 2500); // 總持續時間
       }
-      
+
       function createFirework(x, y) {
           const colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff', '#ff00ff'];
-          for (let i = 0; i < 30; i++) {
+          const particleCount = 30; // 每波煙火的粒子數量
+          for (let i = 0; i < particleCount; i++) {
               const particle = document.createElement('div');
               particle.className = 'firework';
               particle.style.left = `${x}px`;
               particle.style.top = `${y}px`;
               particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-              const angle = Math.random() * Math.PI * 2;
-              const distance = 50 + Math.random() * 100;
+
+              const angle = Math.random() * Math.PI * 2; // 隨機角度
+              const distance = 50 + Math.random() * 100; // 隨機距離
               const dx = Math.cos(angle) * distance;
               const dy = Math.sin(angle) * distance;
+
+              // 將隨機位移量設為 CSS 變數，供動畫使用
               particle.style.setProperty('--dx', `${dx}px`);
               particle.style.setProperty('--dy', `${dy}px`);
+
               fireworksContainer.appendChild(particle);
+
+              // 動畫結束後移除粒子元素，避免累積過多 DOM
+              particle.addEventListener('animationend', () => {
+                  particle.remove();
+              });
           }
       }
-      
+
+      // --- 遊戲邏輯 ---
       // Fisher-Yates 洗牌演算法
       function shuffleArray(array) {
           for (let i = array.length - 1; i > 0; i--) {
@@ -388,231 +414,348 @@
           }
           return array;
       }
-      
-      // 初始化遊戲，根據使用者輸入的 customNumbers 進行排序遊戲
+
+      // 初始化遊戲
       function initGame() {
           numberContainer.innerHTML = '';
           answerContainer.innerHTML = '';
           message.textContent = '';
-  
-          // 複製使用者輸入的數字（順序依照使用者實際填寫的數字）
-          const numbers = customNumbers.slice();
-          shuffleArray(numbers);
-  
-          numbers.forEach(num => {
+          message.style.color = '#2c3e50'; // 重置訊息顏色
+
+          // 複製使用者輸入的數字並洗牌
+          const numbersToShuffle = customNumbers.slice();
+          shuffleArray(numbersToShuffle);
+
+          // 建立可拖曳的數字方塊
+          numbersToShuffle.forEach(num => {
               const numberBox = document.createElement('div');
               numberBox.className = 'number-box';
               numberBox.textContent = num;
-              numberBox.dataset.value = num;
+              numberBox.dataset.value = num; // 儲存數字值
               numberBox.draggable = true;
-  
+
+              // 添加打勾標記（預設隱藏）
               const checkMark = document.createElement('div');
               checkMark.className = 'check-mark';
               checkMark.innerHTML = '✓';
               numberBox.appendChild(checkMark);
-  
-              // 桌面拖拉事件
+
+              // --- 事件監聽器 ---
+              // 桌面拖曳開始
               numberBox.addEventListener('dragstart', (e) => {
-                  if (!numberBox.classList.contains('correct')) {
-                      draggedElement = numberBox;
-                      e.dataTransfer.setData('text/plain', num);
-                      setTimeout(() => { numberBox.style.opacity = '0.5'; }, 0);
-                      speakText(num.toString());
-                  } else {
+                  if (numberBox.classList.contains('correct')) { // 已正確放置的不能拖
                       e.preventDefault();
+                      return;
                   }
+                  draggedElement = numberBox;
+                  e.dataTransfer.setData('text/plain', num);
+                  setTimeout(() => { numberBox.style.opacity = '0.5'; }, 0); // 視覺提示
+                  speakText(num.toString()); // *** 播放數字語音 ***
               });
+
+              // 桌面拖曳結束
               numberBox.addEventListener('dragend', () => {
-                  numberBox.style.opacity = '1';
-                  draggedElement = null;
-              });
-  
-              // 觸控事件
-              numberBox.addEventListener('touchstart', (e) => {
-                  if (!numberBox.classList.contains('correct')) {
-                      draggedElement = numberBox;
-                      speakText(num.toString());
-                      setTimeout(() => { numberBox.style.opacity = '0.7'; }, 0);
+                  if (draggedElement === numberBox) { // 確保是同一個元素
+                    numberBox.style.opacity = '1';
+                    draggedElement = null;
                   }
-              }, { passive: false });
+              });
+
+              // 觸控開始 (模擬拖曳)
+              numberBox.addEventListener('touchstart', (e) => {
+                  if (numberBox.classList.contains('correct')) {
+                      return; // 已正確放置的不能觸控
+                  }
+                  //e.preventDefault(); // 阻止預設滾動行為，如果需要滾動則移除此行
+                  draggedElement = numberBox;
+                  speakText(num.toString()); // *** 播放數字語音 ***
+                  numberBox.style.opacity = '0.7'; // 觸控視覺提示
+                  // 為了觸控拖曳，需要記錄初始位置等，這裡簡化處理
+              }, { passive: false }); // passive: false 允許 preventDefault
+
+              // 觸控結束 (處理放置邏輯)
+               numberBox.addEventListener('touchend', (e) => {
+                 if (draggedElement === numberBox) {
+                    // 這裡需要實現觸控位置判斷與放置邏輯，較複雜，暫省略
+                    numberBox.style.opacity = '1';
+                    // draggedElement = null; // 放置邏輯完成後才設為 null
+                 }
+               });
+
+
+              // 點擊事件 (也播放語音)
               numberBox.addEventListener('click', () => {
                   if (!numberBox.classList.contains('correct')) {
-                      speakText(num.toString());
+                      speakText(num.toString()); // *** 播放數字語音 ***
                   }
               });
-  
+
               numberContainer.appendChild(numberBox);
           });
-  
-          // 建立答案插槽，數量依據 customNumbers 的數量
+
+          // 建立答案插槽
           for (let i = 0; i < customNumbers.length; i++) {
               const slot = document.createElement('div');
               slot.className = 'slot';
-              slot.dataset.position = i;
-  
-              // 桌面拖放事件：先檢查若插槽已有正確答案則不允許替換
-              slot.addEventListener('dragover', (e) => { e.preventDefault(); });
+              slot.dataset.position = i; // 標記插槽的正確位置索引
+
+              // --- 放置區事件監聽器 ---
+              // 允許放置
+              slot.addEventListener('dragover', (e) => {
+                  e.preventDefault();
+                  // 可選：提供視覺回饋
+                  const existingBox = slot.querySelector('.number-box');
+                  if (!existingBox || !existingBox.classList.contains('correct')) {
+                     slot.style.backgroundColor = 'rgba(52, 152, 219, 0.2)';
+                  }
+              });
+
+              // 進入放置區
               slot.addEventListener('dragenter', (e) => {
                   e.preventDefault();
-                  slot.style.backgroundColor = 'rgba(52, 152, 219, 0.2)';
+                  // 可選：視覺回饋
+                  const existingBox = slot.querySelector('.number-box');
+                  if (!existingBox || !existingBox.classList.contains('correct')) {
+                     slot.style.backgroundColor = 'rgba(52, 152, 219, 0.2)';
+                  }
               });
-              slot.addEventListener('dragleave', () => { slot.style.backgroundColor = ''; });
+
+              // 離開放置區
+              slot.addEventListener('dragleave', () => {
+                  slot.style.backgroundColor = ''; // 恢復原樣
+              });
+
+              // 放下數字
               slot.addEventListener('drop', (e) => {
                   e.preventDefault();
-                  slot.style.backgroundColor = '';
-                  // 如果此插槽已有正確的數字，則不允許更換
-                  if (slot.querySelector('.number-box.correct')) {
+                  slot.style.backgroundColor = ''; // 恢復原樣
+                  if (!draggedElement) return; // 防止意外觸發
+
+                  const existingBox = slot.querySelector('.number-box');
+                  // 如果插槽已有正確數字，不允許替換
+                  if (existingBox && existingBox.classList.contains('correct')) {
                       return;
                   }
+
                   // 若已有數字但不正確，先將原有數字移回上方
-                  const existingBox = slot.querySelector('.number-box');
-                  if (existingBox) {
-                      existingBox.classList.remove('incorrect');
-                      existingBox.classList.remove('correct');
-                      numberContainer.appendChild(existingBox);
+                  if (existingBox && existingBox !== draggedElement) {
+                      existingBox.classList.remove('incorrect', 'correct');
+                      numberContainer.appendChild(existingBox); // 移回上方待選區
                   }
-  
-                  const num = e.dataTransfer.getData('text/plain');
-                  if (num !== "") {
-                      const originalBox = document.querySelector(`.number-box[data-value="${num}"]:not(.correct)`);
-                      if (originalBox) {
-                          slot.appendChild(originalBox);
-                          const position = parseInt(slot.dataset.position);
-                          // 判斷答案是否正確：依照使用者原始輸入順序
-                          if (num === customNumbers[position]) {
-                              originalBox.classList.remove('incorrect');
-                              originalBox.classList.add('correct');
-                              setTimeout(() => { playCorrectSound(); }, 200);
-                          } else {
-                              originalBox.classList.remove('correct');
-                              originalBox.classList.add('incorrect');
-                              playErrorSound();
-                          }
-                      }
+
+                  // 將拖曳的數字放入插槽
+                  if (draggedElement.parentNode !== slot) { // 避免從自身拖放到自身
+                      slot.appendChild(draggedElement);
                   }
+                  draggedElement.style.opacity = '1'; // 恢復透明度
+
+                  const num = draggedElement.dataset.value;
+                  const correctNum = customNumbers[i]; // 此位置的正確數字
+
+                  // 判斷答案是否正確
+                  if (num === correctNum) {
+                      draggedElement.classList.remove('incorrect');
+                      draggedElement.classList.add('correct');
+                      playCorrectSound(); // 播放正確音效
+                  } else {
+                      draggedElement.classList.remove('correct');
+                      draggedElement.classList.add('incorrect');
+                      playErrorSound(); // 播放錯誤音效
+                  }
+                  draggedElement = null; // 清除拖曳狀態
               });
-  
+
               answerContainer.appendChild(slot);
           }
-  
-          // 讓上方數字區也能拖放回原位
+
+          // 允許將數字拖回上方區域
           numberContainer.addEventListener('dragover', (e) => { e.preventDefault(); });
           numberContainer.addEventListener('drop', (e) => {
               e.preventDefault();
-              if (draggedElement) {
-                  draggedElement.classList.remove('incorrect');
-                  draggedElement.classList.remove('correct');
+              if (draggedElement && draggedElement.parentNode.classList.contains('slot')) {
+                  // 將數字從插槽移回上方
+                  draggedElement.classList.remove('incorrect', 'correct');
                   numberContainer.appendChild(draggedElement);
-                  draggedElement.style.position = '';
-                  draggedElement.style.zIndex = '';
-                  draggedElement.style.left = '';
-                  draggedElement.style.top = '';
+                  draggedElement.style.opacity = '1';
+                  draggedElement = null;
               }
           });
-  
-          setupTouchDragSupport();
+
+          // 設置觸控拖曳支援 (基礎)
+          setupTouchDragSupport(); // 呼叫觸控處理函數
+          // 調整容器尺寸
+          adjustContainers(); // 初始調整一次
       }
-      
-      // 觸控拖拉支援（適用於觸控裝置）
+
+       // 觸控拖拉支援 (簡化版，僅移動視覺，未完全處理放置邏ilder)
       function setupTouchDragSupport() {
+          let touchStartX, touchStartY, elementStartX, elementStartY;
+
           document.addEventListener('touchmove', (e) => {
               if (!draggedElement) return;
-              const touch = e.touches[0];
-              const newPosX = touch.clientX;
-              const newPosY = touch.clientY;
+              // 阻止頁面滾動
               e.preventDefault();
-              draggedElement.style.position = 'fixed';
-              draggedElement.style.zIndex = 1000;
-              draggedElement.style.left = `${newPosX - draggedElement.offsetWidth / 2}px`;
-              draggedElement.style.top = `${newPosY - draggedElement.offsetHeight / 2}px`;
-          }, { passive: false });
-  
+
+              const touch = e.touches[0];
+              const currentX = touch.clientX;
+              const currentY = touch.clientY;
+
+              // 計算位移並更新元素位置 (相對於視窗)
+              const dx = currentX - touchStartX;
+              const dy = currentY - touchStartY;
+              draggedElement.style.position = 'fixed'; // 使用 fixed 定位以脫離文檔流
+              draggedElement.style.zIndex = 1000; // 確保在最上層
+              draggedElement.style.left = `${elementStartX + dx}px`;
+              draggedElement.style.top = `${elementStartY + dy}px`;
+
+          }, { passive: false }); // 需要 preventDefault
+
           document.addEventListener('touchend', (e) => {
               if (!draggedElement) return;
-              draggedElement.style.opacity = '1';
-              const slots = document.querySelectorAll('.slot');
-              let dropped = false;
-              const lastTouch = e.changedTouches[0];
-              const x = lastTouch.clientX;
-              const y = lastTouch.clientY;
+
+              draggedElement.style.opacity = '1'; // 恢復透明度
+
+              // --- 觸控放置邏輯 ---
+              const touch = e.changedTouches[0];
+              const endX = touch.clientX;
+              const endY = touch.clientY;
+              let droppedInSlot = false;
+
+              // 檢查是否落在某個插槽上
+              const slots = answerContainer.querySelectorAll('.slot');
               slots.forEach((slot) => {
                   const rect = slot.getBoundingClientRect();
-                  if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-                      // 如果此插槽已有正確的數字，則跳過該插槽，不進行替換
-                      if (slot.querySelector('.number-box.correct')) {
+                  if (endX >= rect.left && endX <= rect.right &&
+                      endY >= rect.top && endY <= rect.bottom) {
+
+                      const existingBox = slot.querySelector('.number-box');
+                      // 如果插槽已有正確數字，不允許替換
+                      if (existingBox && existingBox.classList.contains('correct')) {
+                          // 放回原位或上方
+                          resetDraggedElementPosition();
                           return;
                       }
-                      const num = draggedElement.dataset.value;
-                      const existing = slot.querySelector('.number-box');
-                      if (existing) {
-                          existing.classList.remove('incorrect');
-                          existing.classList.remove('correct');
-                          numberContainer.appendChild(existing);
+
+                      // 若已有數字但不正確，先將原有數字移回上方
+                      if (existingBox && existingBox !== draggedElement) {
+                          existingBox.classList.remove('incorrect', 'correct');
+                          numberContainer.appendChild(existingBox); // 移回上方待選區
+                          resetElementStyle(existingBox);
                       }
+
+                      // 放入插槽
                       slot.appendChild(draggedElement);
-                      draggedElement.style.position = '';
-                      draggedElement.style.zIndex = '';
-                      draggedElement.style.left = '';
-                      draggedElement.style.top = '';
+                      resetElementStyle(draggedElement); // 恢復樣式
+
+                      const num = draggedElement.dataset.value;
                       const position = parseInt(slot.dataset.position);
-                      if (num === customNumbers[position]) {
+                      const correctNum = customNumbers[position];
+
+                      // 判斷答案
+                      if (num === correctNum) {
                           draggedElement.classList.remove('incorrect');
                           draggedElement.classList.add('correct');
-                          setTimeout(() => { playCorrectSound(); }, 200);
+                          playCorrectSound();
                       } else {
                           draggedElement.classList.remove('correct');
                           draggedElement.classList.add('incorrect');
                           playErrorSound();
                       }
-                      dropped = true;
+                      droppedInSlot = true;
                   }
               });
-              if (!dropped) {
-                  draggedElement.style.position = '';
-                  draggedElement.style.zIndex = '';
-                  draggedElement.style.left = '';
-                  draggedElement.style.top = '';
-                  const parent = draggedElement.parentNode;
-                  if (parent.classList.contains('slot')) {
-                      parent.removeChild(draggedElement);
-                      numberContainer.appendChild(draggedElement);
-                      draggedElement.classList.remove('incorrect');
-                      draggedElement.classList.remove('correct');
-                  }
+
+              // 如果沒有落在插槽上，或落在已有正確答案的插槽上
+              if (!droppedInSlot) {
+                  resetDraggedElementPosition();
               }
-              draggedElement = null;
-          }, { passive: false });
+
+              draggedElement = null; // 清除拖曳狀態
+          });
+
+           // 記錄觸控起始位置和元素原始位置 (需要在 touchstart 中調用)
+           document.addEventListener('touchstart', (e) => {
+               if (e.target.classList.contains('number-box') && !e.target.classList.contains('correct')) {
+                   draggedElement = e.target; // 設置當前拖曳元素
+                   const touch = e.touches[0];
+                   touchStartX = touch.clientX;
+                   touchStartY = touch.clientY;
+                   const rect = draggedElement.getBoundingClientRect();
+                   elementStartX = rect.left;
+                   elementStartY = rect.top;
+                   draggedElement.style.opacity = '0.7';
+                   speakText(draggedElement.dataset.value.toString()); // 播放語音
+               }
+           }, { passive: true }); // touchstart 可以是 passive
+
+            // 將拖曳元素放回原來的父容器或上方的 numberContainer
+            function resetDraggedElementPosition() {
+                if (!draggedElement) return;
+                const originalParent = numberContainer; // 預設放回上方
+                // 可添加邏輯判斷是否從插槽拖出，決定放回哪個容器
+                originalParent.appendChild(draggedElement);
+                resetElementStyle(draggedElement);
+                draggedElement.classList.remove('incorrect', 'correct');
+            }
+
+             // 重置元素樣式
+            function resetElementStyle(element) {
+                element.style.position = '';
+                element.style.zIndex = '';
+                element.style.left = '';
+                element.style.top = '';
+                element.style.opacity = '1';
+            }
       }
-      
+
+
       // 檢查排序（送出答案）
       function checkCurrentOrder() {
           const slots = answerContainer.querySelectorAll('.slot');
           let allCorrect = true;
           let allFilled = true;
+
+          if (slots.length !== customNumbers.length) {
+              console.error("插槽數量與答案數量不符！");
+              return; // 防止錯誤
+          }
+
           slots.forEach((slot, index) => {
               const box = slot.querySelector('.number-box');
               if (box) {
+                  // 檢查數字是否與該位置的正確答案匹配
                   if (box.dataset.value !== customNumbers[index]) {
                       allCorrect = false;
+                      box.classList.add('incorrect'); // 標記錯誤的
+                  } else {
+                      box.classList.remove('incorrect'); // 確保正確的不被標記為錯誤
+                      box.classList.add('correct'); // 確保正確的被標記
                   }
               } else {
+                  // 有空的插槽
                   allCorrect = false;
                   allFilled = false;
               }
           });
+
+          // 處理檢查結果
           if (!allFilled) {
               message.textContent = '請先將所有數字放入格子中！';
               message.style.color = '#e74c3c';
               setTimeout(() => { message.textContent = ''; }, 2000);
-              return;
+              return; // 尚未填滿，不進行最終判斷
           }
+
           if (allCorrect) {
-              message.textContent = '';
-              createFireworks();
+              message.textContent = ''; // 清空可能存在的錯誤訊息
+              createFireworks(); // 顯示煙火效果
+              // 成功語音提示可以在 createFireworks 內部或之後處理
           } else {
+              // 顯示大叉叉提示
               const bigCross = document.createElement('div');
               bigCross.className = 'big-cross';
               bigCross.textContent = '✗';
+              // ... (叉叉樣式設定，同原碼)
               bigCross.style.position = 'fixed';
               bigCross.style.top = '50%';
               bigCross.style.left = '50%';
@@ -621,64 +764,114 @@
               bigCross.style.color = '#e74c3c';
               bigCross.style.zIndex = '1001';
               document.body.appendChild(bigCross);
-              playErrorSound();
-              setTimeout(() => { document.body.removeChild(bigCross); }, 1500);
+
+              playErrorSound(); // 播放錯誤音效
+              setTimeout(() => {
+                 if (document.body.contains(bigCross)) {
+                    document.body.removeChild(bigCross);
+                 }
+              }, 1500); // 1.5秒後移除叉叉
+
               message.textContent = '對不起，你答錯了';
               message.style.color = '#e74c3c';
-              speakText('對不起，你答錯了');
+              // speakText('對不起，你答錯了'); // 播放錯誤提示語音 (可選)
           }
       }
-      
-      // 調整答案插槽尺寸（依據 customNumbers 的數量）
+
+      // 調整答案插槽尺寸
       function adjustContainers() {
+          // 確保 answerContainer 存在且可見
+          if (!answerContainer || answerContainer.offsetWidth === 0) {
+            // console.log("Answer container not ready for adjustment.");
+            // 可以考慮使用 requestAnimationFrame 或 setTimeout 延遲調用
+             requestAnimationFrame(adjustContainers);
+             return;
+          }
+
           const containerWidth = answerContainer.offsetWidth;
           const slotCount = customNumbers.length;
-          let slotSize = Math.max(30, Math.min(60, (containerWidth - 100) / slotCount));
+          if (slotCount === 0) return; // 防止除以零
+
+          // 計算基礎 slot 大小，考慮間隙
+          const gap = 10; // slot 之間的間隙
+          const totalGapWidth = (slotCount - 1) * gap;
+          // 預留一些邊距
+          const padding = 30; // 容器左右內邊距總和
+          const availableWidth = containerWidth - totalGapWidth - padding;
+          let calculatedSlotSize = availableWidth / slotCount;
+
+          // 限制 slot 大小範圍
+          let slotSize = Math.max(30, Math.min(60, calculatedSlotSize));
+
+          // console.log(`Container Width: ${containerWidth}, Slot Count: ${slotCount}, Calculated Size: ${calculatedSlotSize}, Final Size: ${slotSize}`);
+
+          // 應用尺寸到所有 slot
           document.querySelectorAll('.slot').forEach(slot => {
               slot.style.width = `${slotSize}px`;
               slot.style.height = `${slotSize}px`;
-              slot.style.minWidth = `${slotSize}px`;
+              slot.style.minWidth = `${slotSize}px`; // 確保 flex 佈局下不縮小
               slot.style.minHeight = `${slotSize}px`;
           });
-          const rows = Math.ceil(slotCount / Math.floor(containerWidth / (slotSize + 10)));
-          const containerHeight = (slotSize + 20) * rows;
-          answerContainer.style.minHeight = `${containerHeight}px`;
+
+          // (可選) 調整容器高度以容納可能的多行
+          // 這個計算比較複雜，取決於實際換行情況，暫時保持 min-height
+          // const itemsPerRow = Math.floor(containerWidth / (slotSize + gap));
+          // const rows = Math.ceil(slotCount / itemsPerRow);
+          // const containerHeight = rows * (slotSize + gap) + padding; // 估算高度
+          // answerContainer.style.minHeight = `${containerHeight}px`;
       }
-      
+
+      // 視窗大小改變時重新調整
       window.addEventListener('resize', adjustContainers);
-      
-      // 事件綁定：開始遊戲、重新開始、重新輸入、送出答案
+
+      // --- 事件綁定 ---
+      // 開始遊戲按鈕
       startGameBtn.addEventListener('click', () => {
           const inputs = document.querySelectorAll('.number-input');
           const values = [];
           inputs.forEach(input => {
               const val = input.value.trim();
-              if (val !== "") {  // 只將非空白的值加入
+              if (val !== "") { // 只添加非空值
                   values.push(val);
               }
           });
+
           if (values.length < 1) {
-              alert("請至少輸入1個數字！");
+              alert("請至少輸入 1 個數字！");
               return;
           }
-          customNumbers = values.slice();
-          inputContainer.style.display = 'none';
-          gameContainer.style.display = 'flex';
-          initGame();
-          setTimeout(adjustContainers, 100);
+          if (values.length > 10) {
+             alert("最多只能輸入 10 個數字！");
+             return;
+          }
+
+          customNumbers = values.slice(); // 保存使用者輸入的數字作為答案
+          inputContainer.style.display = 'none'; // 隱藏輸入介面
+          gameContainer.style.display = 'flex';  // 顯示遊戲介面
+          initGame(); // 初始化遊戲
+          // 使用 setTimeout 或 requestAnimationFrame 確保 DOM 渲染完成後再調整尺寸
+          requestAnimationFrame(adjustContainers);
+          //setTimeout(adjustContainers, 0); // 短暫延遲
       });
-      
+
+      // 重新開始按鈕 (使用當前數字重新洗牌)
       resetBtn.addEventListener('click', () => {
           initGame();
-          setTimeout(adjustContainers, 100);
+          requestAnimationFrame(adjustContainers);
       });
-      
+
+      // 重新輸入數字按鈕
       reinputBtn.addEventListener('click', () => {
-          gameContainer.style.display = 'none';
-          inputContainer.style.display = 'block';
+          gameContainer.style.display = 'none';  // 隱藏遊戲介面
+          inputContainer.style.display = 'block'; // 顯示輸入介面
+          // 清空之前的輸入框 (可選)
+          // document.querySelectorAll('.number-input').forEach(input => input.value = '');
+          customNumbers = []; // 清空數字
       });
-      
+
+      // 送出答案按鈕
       checkBtn.addEventListener('click', checkCurrentOrder);
+
   </script>
 </body>
 </html>
